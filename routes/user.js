@@ -25,11 +25,6 @@ router.get('/id', async (req, res, next) => {
 
         const userId = result.insertedId;
         console.log('Successfully inserted new user ID =', userId);
-        console.log('Before Custom Tag Set');
-        if (span) {
-            console.log('Custom Tag Set');
-            span.setAttribute('customUserIDSet', userId);
-        }
         res.json(userId); // Respond with the generated ObjectId
 
     } catch (err) {
@@ -45,7 +40,11 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
         ' host =', req.headers.host,
         ' user-agent =', req.headers['user-agent'],
         ' referer =', req.headers.referer);
-
+    console.log('Before Custom Tag Set');
+    if (span) {
+        console.log('Custom Tag Set');
+        span.setAttribute('customUserIDSet', req.body.userId);
+    }
     const userScore = parseInt(req.body.score, 10);
     const userLevel = parseInt(req.body.level, 10);
     const userLives = parseInt(req.body.lives, 10);
