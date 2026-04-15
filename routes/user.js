@@ -14,7 +14,7 @@ router.use((req, res, next) => {
 // Route: Generate a new user ID
 router.get('/id', async (req, res, next) => {
     console.log('[GET /user/id]');
-    const span = trace.getSpan(context.active());
+    
 
     try {
         const db = await Database.getDb(req.app); // Get the database instance
@@ -41,6 +41,7 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
         ' user-agent =', req.headers['user-agent'],
         ' referer =', req.headers.referer);
     console.log('Before Custom Tag Set');
+    const span = trace.getSpan(context.active());
     if (span) {
         console.log('Custom Tag Set');
         span.setAttribute('customUserIDSet', req.body.userId);
