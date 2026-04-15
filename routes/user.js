@@ -1,7 +1,7 @@
 const express = require('express');
 const { ObjectId } = require('mongodb');
 const Database = require('../lib/database');
-
+const { trace, context } = require('@opentelemetry/api');
 const router = express.Router();
 
 // Middleware that logs the time of the request
