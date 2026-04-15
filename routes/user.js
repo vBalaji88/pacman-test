@@ -41,13 +41,17 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
         ' user-agent =', req.headers['user-agent'],
         ' referer =', req.headers.referer);
     console.log('Before Custom Tag Set');
+    
+    const userScore = parseInt(req.body.score, 10);
+    
+    const userLevel = parseInt(req.body.level, 10);
     const span = trace.getSpan(context.active());
     if (span) {
         console.log('Custom Tag Set');
+        span.setAttribute('custom.userLevel', userLevel);
+        span.setAttribute('custom.customTag', 'CustomTag');
         span.setAttribute('customUserIDSet', req.body.userId);
     }
-    const userScore = parseInt(req.body.score, 10);
-    const userLevel = parseInt(req.body.level, 10);
     const userLives = parseInt(req.body.lives, 10);
     const userET = parseInt(req.body.elapsedTime, 10);
 
