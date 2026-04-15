@@ -1,7 +1,7 @@
 const express = require('express');
 const { ObjectId } = require('mongodb');
 const Database = require('../lib/database');
-const { trace, context } = require('@opentelemetry/api');
+
 const router = express.Router();
 
 // Middleware that logs the time of the request
@@ -13,7 +13,6 @@ router.use((req, res, next) => {
 // Route: Generate a new user ID
 router.get('/id', async (req, res, next) => {
     console.log('[GET /user/id]');
-    const span = trace.getSpan(context.active());
 
     try {
         const db = await Database.getDb(req.app); // Get the database instance
@@ -24,13 +23,8 @@ router.get('/id', async (req, res, next) => {
 
         const userId = result.insertedId;
         console.log('Successfully inserted new user ID =', userId);
-        console.log('Before Custom Tag Set');
-        if (span) {
-            console.log('Custom Tag Set');
-            span.setAttribute('customUserIDSet', userId);
-        }
-        res.json(userId); // Respond with the generated ObjectId
 
+        res.json(userId); // Respond with the generated ObjectId
     } catch (err) {
         console.error('Failed to insert new user ID:', err);
         next(err); // Pass the error to the Express error handler
