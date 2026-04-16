@@ -48,6 +48,8 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
     const span = trace.getSpan(context.active());
     if (span) {
         console.log('Custom Tag Set');
+        console.log(userLevel)
+        console.log(req.body.userId)
         span.setAttribute('custom.userLevel', userLevel);
         span.setAttribute('custom.customTag', 'CustomTag');
         span.setAttribute('customUserIDSet', req.body.userId);
