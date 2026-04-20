@@ -12,7 +12,6 @@
 -------------------------------------------------------------------*/
 
 "use strict";
-import SplunkRum from '@splunk/otel-web';
 
 function geronimo() {
 /* ----- Global Variables ---------------------------------------- */
