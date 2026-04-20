@@ -12,6 +12,7 @@
 -------------------------------------------------------------------*/
 
 "use strict";
+import SplunkRum from '@splunk/otel-web';
 
 function geronimo() {
 /* ----- Global Variables ---------------------------------------- */
@@ -132,6 +133,7 @@ function geronimo() {
             url: "user/id",
             success: function(msg){
                 game.user.id = msg;
+                SplunkRum.setGlobalAttributes({'custom.userId': game.user.id});
             }
         });
     }
