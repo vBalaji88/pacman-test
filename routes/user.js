@@ -45,6 +45,7 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
     const userScore = parseInt(req.body.score, 10);
     
     const userLevel = parseInt(req.body.level, 10);
+    // Manual Instrumentation: Setting custom attributes on the current span
     const span = trace.getSpan(context.active());
     if (span) {
         console.log('Custom Tag Set');

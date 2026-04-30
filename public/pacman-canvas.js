@@ -14,6 +14,68 @@
 "use strict";
 
 function geronimo() {
+    function setupJsonConsole() {
+        var methods = ['log', 'info', 'warn', 'error', 'debug'];
+        var original = {};
+
+        function normalizeArg(arg) {
+            if (arg instanceof Error) {
+                return {
+                    name: arg.name,
+                    message: arg.message,
+                    stack: arg.stack
+                };
+            }
+
+            if (typeof arg === 'undefined') {
+                return null;
+            }
+
+            return arg;
+        }
+
+        function stringifyPayload(payload) {
+            try {
+                return JSON.stringify(payload);
+            } catch (err) {
+                return JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    level: 'error',
+                    message: 'Failed to serialize log payload',
+                    data: {
+                        originalMessage: String(payload && payload.message ? payload.message : payload),
+                        serializerError: err.message
+                    }
+                });
+            }
+        }
+
+        methods.forEach(function(method) {
+            original[method] = typeof window.console[method] === 'function' ? window.console[method].bind(window.console) : null;
+            if (!original[method]) {
+                return;
+            }
+
+            window.console[method] = function() {
+                var args = Array.prototype.slice.call(arguments).map(normalizeArg);
+                var payload = {
+                    timestamp: new Date().toISOString(),
+                    level: method,
+                    message: args.length > 0 ? String(args[0]) : '',
+                    data: args.length > 1 ? args.slice(1) : undefined
+                };
+
+                if (typeof payload.data === 'undefined') {
+                    delete payload.data;
+                }
+
+                original[method](stringifyPayload(payload));
+            };
+        });
+    }
+
+    setupJsonConsole();
+
 /* ----- Global Variables ---------------------------------------- */
     var canvas;
     var joystick;
