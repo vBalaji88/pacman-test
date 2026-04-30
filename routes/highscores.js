@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const Database = require('../lib/database');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
@@ -9,13 +10,13 @@ const urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 // Middleware that is specific to this router
 router.use((req, res, next) => {
-    console.log('Time:', new Date());
+    logger.info({ timestamp: new Date() }, 'Highscores request');
     next();
 });
 
 // GET: Retrieve top 10 high scores
 router.get('/list', urlencodedParser, async (req, res, next) => {
-    console.log('[GET /highscores/list]');
+    logger.info('[GET /highscores/list]');
     try {
         const db = await Database.getDb(req.app); // Get the database instance
         const collection = db.collection('highscore');
@@ -38,17 +39,19 @@ router.get('/list', urlencodedParser, async (req, res, next) => {
 
         res.json(result); // Respond with the high scores
     } catch (err) {
-        console.error('Error fetching high scores:', err);
+        logger.error({ error: err }, 'Error fetching high scores');
         next(err); // Pass the error to the Express error handler
     }
 });
 
 // POST: Insert a new high score
 router.post('/', urlencodedParser, async (req, res, next) => {
-    console.log('[POST /highscores] body =', req.body,
-        ' host =', req.headers.host,
-        ' user-agent =', req.headers['user-agent'],
-        ' referer =', req.headers.referer);
+    logger.info({
+        body: req.body,
+        host: req.headers.host,
+        userAgent: req.headers['user-agent'],
+        referer: req.headers.referer
+    }, '[POST /highscores]');
 
     try {
         const db = await Database.getDb(req.app); // Get the database instance
@@ -70,7 +73,7 @@ router.post('/', urlencodedParser, async (req, res, next) => {
             ip_addr: req.ip,
         });
 
-        console.log('Successfully inserted high score:', result.insertedId);
+        logger.info({ insertedId: result.insertedId }, 'Successfully inserted high score');
 
         res.json({
             name: req.body.name,
@@ -80,7 +83,7 @@ router.post('/', urlencodedParser, async (req, res, next) => {
             rs: 'success',
         });
     } catch (err) {
-        console.error('Error inserting high score:', err);
+        logger.error({ error: err }, 'Error inserting high score');
 
         res.json({
             name: req.body.name,

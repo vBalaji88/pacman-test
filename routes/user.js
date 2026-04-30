@@ -2,18 +2,19 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const Database = require('../lib/database');
 const { trace, context } = require('@opentelemetry/api');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
 // Middleware that logs the time of the request
 router.use((req, res, next) => {
-    console.log('Time:', new Date());
+    logger.info({ timestamp: new Date() }, 'User request');
     next();
 });
 
 // Route: Generate a new user ID
 router.get('/id', async (req, res, next) => {
-    console.log('[GET /user/id]');
+    logger.info('[GET /user/id]');
     
 
     try {
@@ -24,23 +25,24 @@ router.get('/id', async (req, res, next) => {
         });
 
         const userId = result.insertedId;
-        console.log('Successfully inserted new user ID =', userId);
+        logger.info({ userId }, 'Successfully inserted new user ID');
         res.json(userId); // Respond with the generated ObjectId
 
     } catch (err) {
-        console.error('Failed to insert new user ID:', err);
+        logger.error({ error: err }, 'Failed to insert new user ID');
         next(err); // Pass the error to the Express error handler
     }
 });
 
 // Route: Update user stats
 router.post('/stats', express.urlencoded({ extended: false }), async (req, res, next) => {
-    console.log('[POST /user/stats]\n',
-        ' body =', req.body, '\n',
-        ' host =', req.headers.host,
-        ' user-agent =', req.headers['user-agent'],
-        ' referer =', req.headers.referer);
-    console.log('Before Custom Tag Set');
+    logger.info({
+        body: req.body,
+        host: req.headers.host,
+        userAgent: req.headers['user-agent'],
+        referer: req.headers.referer
+    }, '[POST /user/stats]');
+    logger.info('Before Custom Tag Set');
     
     const userScore = parseInt(req.body.score, 10);
     
@@ -48,9 +50,8 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
     // Manual Instrumentation: Setting custom attributes on the current span
     const span = trace.getSpan(context.active());
     if (span) {
-        console.log('Custom Tag Set');
-        console.log(userLevel)
-        console.log(req.body.userId)
+        logger.info('Custom Tag Set');
+        logger.debug({ userLevel, userId: req.body.userId }, 'Setting custom attributes');
         span.setAttribute('custom.userLevel', userLevel);
         span.setAttribute('custom.customTag', 'CustomTag');
         span.setAttribute('customUserIDSet', req.body.userId);
@@ -89,21 +90,21 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
 
         const returnStatus = result.matchedCount > 0 ? 'success' : 'error';
         if (returnStatus === 'success') {
-            console.log('Successfully updated user stats');
+            logger.info('Successfully updated user stats');
         } else {
-            console.log('No matching user found for update');
+            logger.info('No matching user found for update');
         }
 
         res.json({ rs: returnStatus }); // Respond with the status
     } catch (err) {
-        console.error('Error updating user stats:', err);
+        logger.error({ error: err }, 'Error updating user stats');
         next(err); // Pass the error to the Express error handler
     }
 });
 
 // Route: Retrieve all user stats
 router.get('/stats', async (req, res, next) => {
-    console.log('[GET /user/stats]');
+    logger.info('[GET /user/stats]');
 
     try {
         const db = await Database.getDb(req.app); // Get the database instance
@@ -126,7 +127,7 @@ router.get('/stats', async (req, res, next) => {
 
         res.json(result); // Respond with the user stats
     } catch (err) {
-        console.error('Error fetching user stats:', err);
+        logger.error({ error: err }, 'Error fetching user stats');
         next(err); // Pass the error to the Express error handler
     }
 });

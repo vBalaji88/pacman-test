@@ -4,32 +4,31 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const os = require('os');
+const logger = require('../lib/logger');
 
 // Middleware for logging request time
 router.use((req, res, next) => {
-    console.log('Time: ', new Date());
+    logger.info({ timestamp: new Date() }, 'Request received');
     next();
 });
 
 // Route: Retrieve cloud metadata
 router.get('/metadata', async (req, res, next) => {
-    console.log('[GET /loc/metadata]');
+    logger.info('[GET /loc/metadata]');
     try {
         const host = getHost();
         const { cloud, zone } = await getCloudMetadata();
-        console.log(`CLOUD: ${cloud}`);
-        console.log(`ZONE: ${zone}`);
-        console.log(`HOST: ${host}`);
+        logger.info({ cloud, zone, host }, 'Metadata retrieved');
         res.json({ cloud, zone, host });
     } catch (err) {
-        console.error('Error retrieving metadata:', err);
+        logger.error({ error: err }, 'Error retrieving metadata');
         next(err); // Pass the error to the Express error handler
     }
 });
 
 // Helper function: Get cloud metadata
 async function getCloudMetadata() {
-    console.log('getCloudMetadata');
+    logger.info('getCloudMetadata');
     try {
         // Attempt to get metadata from various sources
         const metadata = await getK8sCloudMetadata()
@@ -40,7 +39,7 @@ async function getCloudMetadata() {
 
         return metadata;
     } catch (err) {
-        console.error('Failed to retrieve cloud metadata:', err);
+        logger.error({ error: err }, 'Failed to retrieve cloud metadata');
         // Return default values if all attempts fail
         return { cloud: 'unknown', zone: 'unknown' };
     }
@@ -48,7 +47,7 @@ async function getCloudMetadata() {
 
 // Helper function: Fetch OpenStack metadata
 async function getOpenStackCloudMetadata() {
-    console.log('getOpenStackCloudMetadata');
+    logger.info('getOpenStackCloudMetadata');
     const options = {
         hostname: '169.254.169.254',
         port: 80,
@@ -62,7 +61,7 @@ async function getOpenStackCloudMetadata() {
 
 // Helper function: Fetch AWS metadata
 async function getAWSCloudMetadata() {
-    console.log('getAWSCloudMetadata');
+    logger.info('getAWSCloudMetadata');
     const options = {
         hostname: '169.254.169.254',
         port: 80,
@@ -76,7 +75,7 @@ async function getAWSCloudMetadata() {
 
 // Helper function: Fetch Azure metadata
 async function getAzureCloudMetadata() {
-    console.log('getAzureCloudMetadata');
+    logger.info('getAzureCloudMetadata');
     const options = {
         hostname: '169.254.169.254',
         port: 80,
@@ -91,7 +90,7 @@ async function getAzureCloudMetadata() {
 
 // Helper function: Fetch GCP metadata
 async function getGCPCloudMetadata() {
-    console.log('getGCPCloudMetadata');
+    logger.info('getGCPCloudMetadata');
     const options = {
         hostname: 'metadata.google.internal',
         port: 80,
@@ -106,7 +105,7 @@ async function getGCPCloudMetadata() {
 
 // Helper function: Fetch Kubernetes metadata
 async function getK8sCloudMetadata() {
-    console.log('getK8sCloudMetadata');
+    logger.info('getK8sCloudMetadata');
     const nodeName = process.env.MY_NODE_NAME;
     if (!nodeName) throw new Error('Node name environment variable not set');
 
@@ -137,7 +136,7 @@ async function makeHttpRequest(options, cloudName) {
             res.setEncoding('utf8');
             res.on('data', (chunk) => (data += chunk));
             res.on('end', () => {
-                console.log(`${cloudName} Metadata:`, data);
+                logger.info({ cloudName, data }, 'HTTP Metadata retrieved');
                 resolve({ cloud: cloudName, zone: data.trim() });
             });
         });
@@ -159,7 +158,7 @@ async function makeHttpsRequest(options, cloudName) {
             res.setEncoding('utf8');
             res.on('data', (chunk) => (data += chunk));
             res.on('end', () => {
-                console.log(`${cloudName} Metadata:`, data);
+                logger.info({ cloudName, data }, 'HTTPS Metadata retrieved');
                 resolve({ cloud: cloudName, zone: data.trim() });
             });
         });
@@ -171,9 +170,9 @@ async function makeHttpsRequest(options, cloudName) {
 
 // Helper function: Get host information
 function getHost() {
-    console.log('[getHost]');
+    logger.info('[getHost]');
     const host = os.hostname();
-    console.log(`HOST: ${host}`);
+    logger.info({ host }, 'Host information');
     return host;
 }
 
