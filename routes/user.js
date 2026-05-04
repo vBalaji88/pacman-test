@@ -5,6 +5,8 @@ const { trace, context, SpanStatusCode } = require('@opentelemetry/api');
 const logger = require('../lib/logger');
 
 const router = express.Router();
+//BV - Added Custom Span for DB Connect Failure
+const tracer = trace.getTracer('pacman-database');
 
 // Middleware that logs the time of the request
 router.use((req, res, next) => {
