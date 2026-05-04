@@ -1,7 +1,7 @@
 const express = require('express');
 const { ObjectId } = require('mongodb');
 const Database = require('../lib/database');
-const { trace, context } = require('@opentelemetry/api');
+const { trace, context, SpanStatusCode } = require('@opentelemetry/api');
 const logger = require('../lib/logger');
 
 const router = express.Router();
@@ -30,6 +30,13 @@ router.get('/id', async (req, res, next) => {
 
     } catch (err) {
         logger.error({ error: err }, 'Failed to insert new user ID');
+        const span = trace.getSpan(context.active());
+        if (span) {
+            const span = tracer.startSpan("UserStats db.connect.error");
+            span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+            span.recordException(err);
+            span.end();
+        }
         next(err); // Pass the error to the Express error handler
     }
 });
@@ -97,6 +104,7 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
 
         res.json({ rs: returnStatus }); // Respond with the status
     } catch (err) {
+
         logger.error({ error: err }, 'Error updating user stats');
         next(err); // Pass the error to the Express error handler
     }
