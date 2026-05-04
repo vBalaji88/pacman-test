@@ -186,7 +186,7 @@ function geronimo() {
             }
         });
     }
-
+    //BV - Added AJAX function to update user stats in the database
     function ajaxGetUserId() {
         $.ajax({
             datatype: "json",

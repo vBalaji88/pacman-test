@@ -30,9 +30,10 @@ router.get('/id', async (req, res, next) => {
 
     } catch (err) {
         logger.error({ error: err }, 'Failed to insert new user ID');
+        //BV - Added Custom Span for DB Connect Failure
         const span = trace.getSpan(context.active());
         if (span) {
-            const span = tracer.startSpan("UserStats db.connect.error");
+            const span = tracer.startSpan("New ID db.connect.error");
             span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
             span.recordException(err);
             span.end();
@@ -54,7 +55,7 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
     const userScore = parseInt(req.body.score, 10);
     
     const userLevel = parseInt(req.body.level, 10);
-    // Manual Instrumentation: Setting custom attributes on the current span
+    //BV - Manual Instrumentation: Setting custom attributes on the current span
     const span = trace.getSpan(context.active());
     if (span) {
         logger.info('Custom Tag Set');
@@ -104,7 +105,14 @@ router.post('/stats', express.urlencoded({ extended: false }), async (req, res, 
 
         res.json({ rs: returnStatus }); // Respond with the status
     } catch (err) {
-
+        //BV - Added Custom Span for DB Connect Failure
+        const span = trace.getSpan(context.active());
+        if (span) {
+            const span = tracer.startSpan("Post UserStats db.connect.error");
+            span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+            span.recordException(err);
+            span.end();
+        }
         logger.error({ error: err }, 'Error updating user stats');
         next(err); // Pass the error to the Express error handler
     }
@@ -136,6 +144,14 @@ router.get('/stats', async (req, res, next) => {
         res.json(result); // Respond with the user stats
     } catch (err) {
         logger.error({ error: err }, 'Error fetching user stats');
+        //BV - Added Custom Span for DB Connect Failure
+        const span = trace.getSpan(context.active());
+        if (span) {
+            const span = tracer.startSpan("Get UserStats db.connect.error");
+            span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+            span.recordException(err);
+            span.end();
+        }
         next(err); // Pass the error to the Express error handler
     }
 });
